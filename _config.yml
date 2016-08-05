@@ -1,0 +1,8 @@
+name: "Data Viz"
+description: "Data Visualization | With Application in R"
+
+permalink: pretty
+
+collections:
+  chapters:
+    output: true

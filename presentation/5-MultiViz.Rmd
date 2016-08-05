@@ -1,0 +1,377 @@
+---
+title: "5-MultiViz"
+author: "Amit Kapoor"
+date: "15 July 2015"
+output: html_document
+---
+
+We will use the diamonds dataset to make the visualization
+
+```{r}
+knitr::opts_chunk$set(cache=TRUE)
+
+library(grid)
+library(ggplot2)
+library(gridExtra)
+
+theme_multi <- function(base_size = 24, base_family = "Helvetica") {
+    theme(
+    line =  element_line(colour = "black", size = 0.5, linetype = 1,
+                            lineend = "butt"),
+    rect =  element_rect(fill = "white", colour = "black", size = 0.5, linetype = 1),
+    text =  element_text(family = base_family, face = "plain",
+                  colour = "black", size = base_size,
+                  hjust = 0.5, vjust = 0.5, angle = 0, lineheight = 0.9),
+    
+    axis.text =          element_text(size = rel(0.8), colour = "grey60"),
+    strip.text =         element_text(size = rel(0.8), colour = "grey80"),
+
+    axis.line =          element_line(colour = "grey80"),
+    axis.text.x =        element_text(vjust = 1),
+    axis.text.y =        element_text(hjust = 1),
+    axis.ticks =         element_line(colour = "grey50", size = 0.2),
+    axis.title =         element_text(colour = "grey80"),
+    axis.title.x =       element_text(vjust = 1),
+    axis.title.y =       element_text(angle = 90),
+    axis.ticks.length =  unit(0.3, "lines"),
+    axis.ticks.margin =  unit(0.5, "lines"),
+
+    legend.background =  element_rect(fill = "black"),
+    legend.margin =      unit(0.4, "cm"),
+    legend.key =         element_rect(fill = "grey20", colour = "grey50"),
+    legend.key.size =    unit(2, "lines"),
+    legend.key.height =  unit(0.8, "cm"),
+    legend.key.width =   unit(0.8, "cm"),
+    legend.text =        element_text(size = rel(0.8), colour = "grey50"),
+    legend.text.align =  NULL,
+    legend.title =       element_text(size = rel(1.0), face = "plain", 
+                                      hjust = 2, colour = "grey70"),
+    legend.title.align = NULL,
+    legend.position =    "right",
+    legend.direction =   "vertical",
+    legend.justification = "center",
+    legend.box =         NULL,
+
+    panel.background =   element_rect(fill = "black", colour = NA),
+    panel.border =       element_rect(fill = NA, colour = NA),
+    panel.grid.major =   element_line(colour = "grey40", size = 0.2),
+    panel.grid.minor =   element_line(colour = "black", size = 0.5),
+    panel.margin =       unit(0.25, "lines"),
+
+    strip.background =   element_rect(fill = "grey30", colour = "grey10"),
+    strip.text.x =       element_text(),
+    strip.text.y =       element_text(angle = -90),
+
+    plot.background =    element_rect(colour = "black", fill = "black"),
+    plot.title =         element_text(size = rel(1.2)),
+    plot.margin =        unit(c(1, 1, 0.5, 0.5), "lines"),
+
+    complete = TRUE
+  )
+}
+attr(theme_multi(), "complete")
+
+```
+
+Create three dataset - all, sample of 5000 and sample 1000
+
+```{r}
+library(dplyr)
+data(diamonds)
+dlarge <- sample_n(diamonds, 2500)
+dsmall <- sample_n(diamonds, 500)
+```
+
+Start with two dimension viz - price vs carat
+
+```{r}
+d2 <- ggplot(diamonds) + aes(carat,price) + 
+  geom_point(color = "orange", alpha = 0.4, size = 2) +
+  theme_multi()
+d2 
+ggsave("img/d2.png", d2, width = 16, height = 9)
+```
+
+
+Lets do a log transform on the axis
+
+```{r}
+d2log <- ggplot(diamonds) + aes(log10(carat), log10(price)) + 
+  geom_point(color = "orange", alpha = 0.4, size = 2) +
+  theme_multi()
+d2log 
+ggsave("img/d2log.png", d2log, width = 16, height = 9)
+```
+
+
+Lets subset the data
+
+```{r}
+d2logSubset <- ggplot(diamonds) + aes(log10(carat), log10(price)) + 
+  geom_point(color = "orange", alpha = 0.4, size = 2) +
+  ylim(c(4.0,4.3)) + xlim(c(0,0.8)) +
+  theme_multi()
+d2logSubset 
+ggsave("img/d2logSubset.png", d2logSubset, width = 16, height = 9)
+```
+
+
+Three dimension viz - Shape (Nominal)
+
+```{r}
+d3ShapeN <- ggplot(dlarge) + aes(log10(carat), log10(price), shape = cut) + 
+  geom_point(alpha = 0.4, size = 4, color = "orange") +
+  theme_multi()
+d3ShapeN
+ggsave("img/d3ShapeN.png", d3ShapeN, width = 16, height = 9)
+```
+
+Three dimension viz - Colour (Nominal)
+
+```{r}
+d3ColorN <- ggplot(diamonds) + aes(log10(carat), log10(price), 
+                                   color = color) + 
+  geom_point(alpha = 0.4, size = 2) +
+  theme_multi()
+d3ColorN
+ggsave("img/d3ColorN.png", d3ColorN, width = 16, height = 9)
+```
+
+Three dimension viz - Size (Quantiative)
+
+```{r}
+d3SizeQ <- ggplot(diamonds) + aes(log10(carat), log10(price), 
+                                  size = log(x*y*z)) + 
+  geom_point(alpha = 0.4, color = "orange") + 
+  theme_multi()
+d3SizeQ
+ggsave("img/d3SizeQ.png", d3SizeQ, width = 16, height = 9)
+```
+
+
+Three dimension viz - Static 3d (Does not work!)
+
+```{r}
+library(scatterplot3d)
+
+# Get the scales for color
+library(scales)
+cutColor <- alpha(as.numeric(diamonds$cut), 0.3)
+
+# Create the dummy plot
+scatterplot3d(x = log10(diamonds$carat), z = log10(diamonds$price), 
+              y = diamonds$cut)
+
+# Cover it up with black              
+par(bg="black")
+rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4],col = "black")
+
+# Create the actual plot
+scatterplot3d(x = log10(diamonds$carat), z = log10(diamonds$price), 
+              y = diamonds$cut, color = cutColor,
+              xlab = "log10(carat)", zlab = "log10(price)", ylab = "cut",
+              bg = "black", col.axis = "grey60", col.grid = "grey80",
+              col.lab ="grey80")
+```
+
+
+Three dimension viz - Interactive 3d
+
+```{r}
+library(rgl)
+rgl.open()    # Open a new RGL device
+
+rgl.bg(color = "black") # Setup the background color
+rgl.viewpoint(theta = 15, phi = 20, zoom = 1)
+
+library(scales)
+cutColor <- alpha(as.numeric(diamonds$cut), 0.3)
+
+plot3d(log10(diamonds$carat), log10(diamonds$price), diamonds$cut, 
+       size = 2, type = "p", col = cutColor, add = TRUE)
+decorate3d(xlab = "log10(carat)", ylab="log10(price)", zlab="cut",
+       col.axis = "grey20", col.grid = "grey20", col.lab ="grey20",
+       top = TRUE, box = TRUE, aspect = c(16,9,7))       
+
+movie3d(spin3d(axis = c(0,1,0), rpm = 5), duration=6, 
+        dir = getwd(), type = "gif")
+
+rgl.close()
+
+```
+
+
+
+Four dimension viz - Colour + Size
+
+```{r}
+d4ColorSize <- ggplot(diamonds) + aes(log10(carat), log10(price), 
+                                    color = color, size = x) + 
+  geom_point(alpha = 0.4) + scale_size(range = c(1, 5)) +
+  theme_multi()
+d4ColorSize
+ggsave("img/d4ColorSize.png", d4ColorSize, width = 16, height = 9)
+
+```
+
+
+Four dimension viz - Colour + Facet - 1d
+```{r}
+d4ColorFacet <- ggplot(dlarge) + aes(log10(carat), log10(price), 
+                                    color = color) + 
+  geom_point(alpha = 0.5, size = 2) + facet_grid(. ~ color) +
+  theme_multi()
+d4ColorFacet
+ggsave("img/d4ColorFacet.png", d4ColorFacet, width = 16, height = 9)
+```
+
+
+Five dimension viz - Colour + Facet - 2d
+```{r}
+d5ColorFacet <- ggplot(dlarge) + aes(log10(carat), log10(price), 
+                                    color = color) + 
+  geom_point(alpha = 0.5, size = 2) + facet_grid(cut ~ color) +
+  theme_multi()
+d5ColorFacet
+ggsave("img/d5ColorFacet.png", d5ColorFacet, width = 16, height = 9)
+```
+
+Five dimension viz - Matrix
+```{r}
+library(GGally)
+dSelect <- diamonds %>%
+           select(log10(price), log10(carat), cut)
+ggpairs(dSelect)
+```
+
+
+Five dimensions viz - Subplot (Not Working)
+```{r}
+library(ggsubplot)
+
+ggplot(diamonds) + aes(carat, price) + geom_point(size = 0) +
+  geom_subplot2d(aes(carat, price, 
+                     subplot = geom_bar(aes(color, fill = color), 
+                                        position = "dodge")), 
+                 bins = c(10, 14), y_scale = free,
+                 height.adjust = 0.8, width.adjust = 0.8,
+                 ref = ref_box(aes(color = length(color)))) +
+  scale_color_gradient("Total\ncount", low = "grey70",
+                       high = "black")                       
+
+```
+
+Six dimension plus - Parallel Coordinates
+```{r}
+library(GGally)
+ggparcoord(data = iris, columns = 1:4, groupColumn = 5, 
+           order = "anyClass") + theme_multi()
+```
+
+
+Six dimension plus - TablePlot
+```{r}
+library(tabplot)
+tab <- tableplot(diamonds, sortCol = price, 
+                 select = c(price, carat, cut, color, clarity, x, y, z,
+                            depth, table))
+tableSave(tab, filename = "tableplot.png", width = 16, height = 9,
+           fontsize = 16, legend.lines = 8)
+
+# Zooming & Filtering
+tabZoom <- tableplot(diamonds, 
+                     select = c(price, carat, cut, color, clarity), 
+                     sortCol = price, from = 0, to = 5)
+                    
+tableSave(tabZoom, filename = "tableplotzoom.png", width = 16, height = 9,
+           fontsize = 16, legend.lines = 8)
+
+```
+
+
+Star Coordinates
+
+
+```{r}
+d <- dlarge
+d$log10price <- log10(d$price)
+d$log10carat <- log10(d$carat)
+
+d <- subset(d, select=c(log10price, log10carat, color, cut, clarity))
+
+# Convert factors to 
+d$cut <- as.numeric(x$cut)
+d$color <- as.numeric(x$color)
+d$clarity <- as.numeric(x$clarity)
+
+
+# Refer to following post
+# http://stats.stackexchange.com/questions/58001/how-to-plot-a-5d-data-set-in-star-coordinates
+
+# Normalize the data
+d.range <- apply(d, 2, range)
+z <- t((t(d) - d.range[1,]) / (d.range[2,] - d.range[1,]))
+
+dm <- dim(z)[2] # Dimensions
+prj <- t(sapply((1:dm)/dm, function(i) c(cos(2*pi*i), sin(2*pi*i))))
+star <- z %*% prj
+
+library(scales)
+cols <- alpha(x$cut, 0.5)
+
+par(bg="black")
+plot(rbind(apply(star, 2, range), apply(prj*1.25, 2, range)), 
+     type="n", bty="n", xaxt="n", yaxt="n",
+     main="Star Coordinates", xlab="", ylab="")
+
+tmp <- apply(prj, 1, function(v) lines(rbind(c(0,0), v), col = "white"))
+points(star, pch=19, col=cols, cex = 1)
+text(prj * 1.2, labels=colnames(z), cex=1.5, col="white")
+
+# png("img/starcoord.png", width = 800, height = 450, units= "px")	
+
+```
+
+# Star plot 
+
+```{r}
+
+par(bg = "black")
+
+dstar <- dsmall[1:100,]
+
+# Create the x,y coordinate plot
+dstar$log10carat <- log10(dstar$carat)
+dstar$log10price <- log10(dstar$price)
+loc <- data.matrix(dstar[,11:12])
+
+plot(loc, col.axis = "white", col.grid = "white")
+
+palette(rainbow(12, s = 0.6, v = 0.75, alpha = 0.7))
+
+stars(dstar[,2:6], key.loc = c(-1, 3), scale = TRUE, 
+      locations = loc, axes = TRUE, len =0.07, radius = TRUE,
+      full = TRUE, labels = NULL,  draw.segments = TRUE,
+      xlab="log10(carat)", ylab="log10price", frame.plot = FALSE,
+      col.axis = "grey80", col.grid = "grey80", col.lab ="grey80", 
+      xlim=c(-0.7,0.7))
+
+stars(dstar[,2:6], key.loc = c(-2, 10), scale = TRUE, 
+      locations = NULL, len =1, radius = TRUE,
+      full = TRUE, labels = NULL,  draw.segments = TRUE)
+
+
+```
+
+
+Bertin's Matrix (Don't do for the diamonds set)
+```{r}
+install.packages("bertin",repos="http://r-forge.r-project.org")
+library(bertin)
+
+data(Hotel)
+image.bertin(bertinrank(Hotel), main= "Hotel data")
+plot.bertin(bertinrank(Hotel), main= "Hotel data")
+plot.bertin(Hotel, palette=c("white","black"))
+
+```

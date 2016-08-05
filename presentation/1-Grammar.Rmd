@@ -1,0 +1,266 @@
+---
+title: "Grammar of Graphics"
+author: "Amit Kapoor"
+date: "13 July 2015"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+
+library(grid)
+library(ggplot2)
+library(gridExtra)
+
+theme_black <- function(base_size = 16, base_family = "Helvetica") {
+    theme(
+    line =  element_line(colour = "black", size = 0.5, linetype = 1,
+                            lineend = "butt"),
+    rect =  element_rect(fill = "white", colour = "black", size = 0.5, linetype = 1),
+    text =  element_text(family = base_family, face = "plain",
+                  colour = "black", size = base_size,
+                  hjust = 0.5, vjust = 0.5, angle = 0, lineheight = 0.9),
+    
+    axis.text =          element_text(size = rel(0.8), colour = "grey70"),
+    strip.text =         element_text(size = rel(0.8), colour = "grey70"),
+
+    axis.line =          element_line(colour = "grey70"),
+    axis.text.x =        element_text(vjust = 1),
+    axis.text.y =        element_text(hjust = 1),
+    axis.ticks =         element_line(colour = "grey70", size = 0.2),
+    axis.title =         element_text(colour = "grey70"),
+    axis.title.x =       element_blank(),
+    axis.title.y =       element_blank(),
+  # axis.title.x =       element_text(vjust = 1),
+  # axis.title.y =       element_text(angle = 90),
+    axis.ticks.length =  unit(0.3, "lines"),
+    axis.ticks.margin =  unit(0.5, "lines"),
+
+    legend.background =  element_rect(fill = 'black'),
+    legend.margin =      unit(0.2, "cm"),
+    legend.key =         element_rect(fill = "grey20", colour = "grey50"),
+    legend.key.size =    unit(1.2, "lines"),
+    legend.key.height =  NULL,
+    legend.key.width =   NULL,
+    legend.text =        element_text(size = rel(0.8), colour = "grey50"),
+    legend.text.align =  NULL,
+    legend.title =       element_text(size = rel(0.8), face = "plain", hjust = 0, colour = "grey50"),
+    legend.title.align = NULL,
+    legend.position =    "none",
+    legend.direction =   "vertical",
+    legend.justification = "center",
+    legend.box =         NULL,
+
+    panel.background =   element_rect(fill = "black", colour = NA),
+    panel.border =       element_rect(fill = NA, colour = NA),
+    panel.grid.major =   element_line(colour = "grey50", size = 0.2),
+    panel.grid.minor =   element_line(colour = "black", size = 0.5),
+    panel.margin =       unit(0.25, "lines"),
+
+    strip.background =   element_rect(fill = "grey30", colour = "grey10"),
+    strip.text.x =       element_text(),
+    strip.text.y =       element_text(angle = -90),
+
+    plot.background =    element_rect(colour = "black", fill = "black"),
+    plot.title =         element_text(size = rel(1.2)),
+    plot.margin =        unit(c(1, 1, 0.5, 0.5), "lines"),
+
+    complete = TRUE
+  )
+}
+attr(theme_black(), "complete")
+
+```
+
+
+Load the Humble Data
+```{r, echo=FALSE}
+areas <- c("N", "E", "W", "S", "C")
+sales <- c(5, 25, 15, 20, 10)
+profit <- c(2, 8, 6, 5, 3)
+humble <- data.frame(areas, sales, profit)
+humble$areas <-ordered(humble$areas, levels=c("N", "E", "W", "S", "C"))
+humble
+humble.base <-humble
+
+# For maps
+lat <- c(0, 1, -1, 0, 0)
+long <- c(1, 0, 0, -1, 0)
+humble.map <- data.frame(areas, sales, profit, lat, long)
+
+
+# For the Waterfall Chart
+humble$id <- seq_along(humble$areas)
+humble$end_sales <- cumsum(humble$sales)
+humble$start_sales <- c(0, head(humble$end_sales, -1))
+humble$end_profit <- cumsum(humble$sales)
+humble$start_profit <- c(0, head(humble$end_profit, -1))
+humble
+
+ggplot(humble, aes(x = "", fill = areas, weight = sales)) +
+  geom_bar(width = 1)  + coord_polar("y") 
+
+
+```
+
+Point - Cartesian (pc)
+```{r humble-point, echo=FALSE}
+pc <- ggplot(humble, aes(areas,sales, color = areas)) +
+  geom_point(size = 6) +
+  ylim(0, 25) +
+  theme_black()
+pc
+```
+
+Line - Cartesian (lc)
+```{r humble-line, echo=FALSE}
+lc <- ggplot(humble, aes(areas, weight = sales, fill = areas)) +
+  geom_bar(width = 0.1)  +
+  theme_black()
+lc
+```
+
+Bar - Cartesian (bc)
+```{r humble-bar, echo=FALSE}
+bc <- ggplot(humble, aes(areas, weight = sales, fill = areas)) +
+  geom_bar()  +
+  theme_black()
+bc
+```
+
+Bar Stacked - Cartesian (sc)
+```{r humble-bar-stacked, echo=FALSE}
+sc <- ggplot(humble, aes(x = "", fill = areas, weight = sales)) +
+  geom_bar(width = 0.3)  + xlab("") +
+  theme_black()
+sc
+```
+
+Bar Waterfall - Cartesian (wc)
+``` {r humble-bar-waterfall, echo=FALSE}
+wc <- ggplot(humble, aes(areas, fill = areas)) + geom_rect(aes(x = areas,
+   xmin = id - 0.5, xmax = id + 0.5, ymin = end_sales, 
+   ymax = start_sales)) +
+   theme_black()
+wc
+```
+
+Point - Cartesian Flip (pf)
+```{r humble-point-flip, echo=FALSE}
+pf <- pc + coord_flip()
+pf
+```
+
+Line - Cartesian Flip (lf)
+```{r humble-line-flip, echo=FALSE}
+lf <- lc + coord_flip()
+lf
+```
+
+Bar - Cartesian Flip (bf)
+```{r humble-bar-flip, echo=FALSE}
+bf <- bc + coord_flip()
+bf
+```
+
+Bar Stacked - Cartesian Flip (sf)
+```{r humble-bar-stacked-flip, echo=FALSE}
+sf <- sc + geom_bar(width = 0.3) + coord_flip()
+sf
+```
+
+Bar Waterfall - Cartesian Flip (wf)
+``` {r humble-bar-waterfall-flip, echo=FALSE}
+wf <- wc + coord_flip()
+wf
+```
+
+Point - Polar - x (ppx)
+```{r humble-point-polar-x, echo=FALSE}
+ppx <- pc + coord_polar(theta = "x")
+ppx
+```
+
+Line - Polar -x (lpx)
+```{r humble-line-polar-x, echo=FALSE}
+lpx <- lc + coord_polar(theta ="x")
+lpx
+```
+
+Bar - Polar - x (bpx)
+```{r humble-bar-polar-x, echo=FALSE}
+bpx <- bc + geom_bar(width=1) + coord_polar(theta ="x")
+bpx
+```
+
+Bar Stacked - Polar - x (spx)
+```{r humble-bar-stacked-polar-x, echo=FALSE}
+spx <- sc + geom_bar(width = 1) + coord_polar(theta ="x")
+spx
+```
+
+Bar Waterfall - Polar - x (wpx)
+``` {r humble-bar-waterfall-polar-x, echo=FALSE}
+wpx <- wc + coord_polar(theta ="x")
+wpx
+```
+
+Point - Polar - y (ppy)
+```{r humble-point-polar-y, echo=FALSE}
+ppy <- pc + coord_polar(theta ="y")
+ppy
+```
+
+Line - Polar -y (lpy)
+```{r humble-line-polar-y, echo=FALSE}
+lpy <- lc + coord_polar(theta ="y")
+lpy
+```
+
+Bar - Polar - y (bpy)
+```{r humble-bar-polar-y, echo=FALSE}
+bpy <- bc + geom_bar(width=1) + coord_polar(theta ="y")
+bpy
+```
+
+Bar Stacked - Polar - y (spy)
+```{r humble-bar-stacked-polar-y, echo=FALSE}
+spy <- sc + geom_bar(width = 1) + coord_polar(theta ="y")
+spy
+```
+
+Bar Waterfall - Polar - y (wpy)
+``` {r humble-bar-waterfall-polar-y, echo=FALSE}
+wpy <- wc + coord_polar(theta ="y")
+wpy
+```
+
+
+Plot - Grid  
+```{r humble-plots, echo=FALSE}
+
+humble_plots_cart <- arrangeGrob(pc, lc, bc, sc, wc,
+                              ncol=3, nrow =2)
+humble_plots_cart
+ggsave(humble_plots_cart, file="img/humble_plots_cart.png",
+       width = 16, height = 8.5 )
+
+humble_plots_flip <- arrangeGrob(pf, lf, bf, sf, wf,
+                                 ncol=3, nrow =2)
+humble_plots_flip
+ggsave(humble_plots_flip, file="img/humble_plots_flip.png",
+       width = 16, height = 8.5 )
+
+humble_plots_polar_x <- arrangeGrob(ppx, lpx, bpx, spx, wpx,
+                       ncol=3, nrow =2)
+humble_plots_polar_x
+ggsave(humble_plots_polar_x, file="img/humble_plots_polar_x.png",
+       width = 16, height = 8.5 )
+
+humble_plots_polar_y <- arrangeGrob(ppy, lpy, bpy, spy, wpy,
+                       ncol=3, nrow =2)
+humble_plots_polar_y
+ggsave(humble_plots_polar_y, file="img/humble_plots_polar_y.png",
+       width = 16, height = 8.5 )
+```
+
+

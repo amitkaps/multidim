@@ -1,0 +1,305 @@
+---
+title: "6-Aesthetics"
+author: "Amit Kapoor"
+date: "12 October 2015"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+
+library(grid)
+library(ggplot2)
+library(gridExtra)
+library(xkcd)
+
+theme_black <- function(base_size = 16, base_family = "Helvetica") {
+    theme(
+    line =  element_line(colour = "black", size = 0.5, linetype = 1,
+                            lineend = "butt"),
+    rect =  element_rect(fill = "white", colour = "black", size = 0.5, linetype = 1),
+    text =  element_text(family = base_family, face = "plain",
+                  colour = "black", size = base_size, 
+                  margin = margin(), debug = FALSE,
+                  hjust = 0.5, vjust = 0.5, angle = 0, lineheight = 0.9),
+    
+    axis.text =          element_text(size = rel(0.8), colour = "grey70"),
+    strip.text =         element_text(size = rel(0.8), colour = "grey70"),
+
+    axis.line =          element_line(colour = "grey70"),
+    axis.text.x =        element_text(vjust = 1),
+    axis.text.y =        element_text(hjust = 1),
+    axis.ticks =         element_line(colour = "grey70", size = 0.2),
+    axis.title =         element_text(colour = "grey70"),
+    axis.title.x =       element_blank(),
+    axis.title.y =       element_blank(),
+  # axis.title.x =       element_text(vjust = 1),
+  # axis.title.y =       element_text(angle = 90),
+    axis.ticks.length =  unit(0.3, "lines"),
+  #  axis.ticks.margin =  unit(0.5, "lines"),
+
+    legend.background =  element_rect(fill = 'black'),
+    legend.margin =      unit(0.2, "cm"),
+    legend.key =         element_rect(fill = "grey20", colour = "grey50"),
+    legend.key.size =    unit(1.2, "lines"),
+    legend.key.height =  NULL,
+    legend.key.width =   NULL,
+    legend.text =        element_text(size = rel(0.8), colour = "grey50"),
+    legend.text.align =  NULL,
+    legend.title =       element_text(size = rel(0.8), face = "plain", hjust = 0, colour = "grey50"),
+    legend.title.align = NULL,
+    legend.position =    "none",
+    legend.direction =   "vertical",
+    legend.justification = "center",
+    legend.box =         NULL,
+
+    panel.background =   element_rect(fill = "black", colour = NA),
+    panel.border =       element_rect(fill = NA, colour = NA),
+    panel.grid.major =   element_line(colour = "grey50", size = 0.2),
+    panel.grid.minor =   element_line(colour = "black", size = 0.5),
+    panel.margin =       unit(0.25, "lines"),
+
+    strip.background =   element_rect(fill = "grey30", colour = "grey10"),
+    strip.text.x =       element_text(),
+    strip.text.y =       element_text(angle = -90),
+
+    plot.background =    element_rect(colour = "black", fill = "black"),
+    plot.title =         element_text(size = rel(1.2)),
+    plot.margin =        unit(c(1, 1, 0.5, 0.5), "lines"),
+
+    complete = TRUE
+  )
+}
+attr(theme_black(), "complete")
+```
+
+Load the Humble Data
+```{r, echo=FALSE}
+areas <- c("N", "E", "W", "S", "C")
+sales <- c(5, 25, 15, 20, 10)
+profit <- c(2, 8, 6, 5, 3)
+humble <- data.frame(areas, sales, profit)
+humble$areas <-ordered(humble$areas, levels=c("N", "E", "W", "S", "C"))
+humble
+
+# For maps
+lat <- c(0, 1, -1, 0, 0)
+long <- c(1, 0, 0, -1, 0)
+humble <- data.frame(areas, sales, profit, lat, long)
+
+# For the Waterfall Chart
+humble$id <- seq_along(humble$areas)
+humble$end_sales <- cumsum(humble$sales)
+humble$start_sales <- c(0, head(humble$end_sales, -1))
+humble$end_profit <- cumsum(humble$sales)
+humble$start_profit <- c(0, head(humble$end_profit, -1))
+humble
+```
+
+
+Make Charts
+```{r}
+
+Bars
+
+ggplot() + aes(areas, weight = sales, fill = profit) +
+  geom_bar(width = 1) + theme_minimal()
+
+ggplot() + aes(areas, weight = sales, fill = profit) +
+  geom_bar(width = 1) + theme_black() + coord_polar()
+
+ggplot() + aes(x = lon, y = long, weight = sales, fill = profit) +
+  geom_tile(width = 1) + theme_black() + coord_map(lat, lon)
+
+## Bar Waterfall
+ggplot() + xkcdrect(data = humble, aes(
+   xmin = id - 0.5, xmax = id + 0.5, ymin = end_sales, 
+   ymax = start_sales, fill = profit)) + theme_void() + 
+  theme(legend.position = 'none')
+
+ggsave
+
+## CoxComb
+ggplot() + xkcdrect(data = humble, aes(
+  xmin = id - 0.5, xmax = id + 0.5, ymin = 0, 
+  ymax = sales, fill = I("red"))) + 
+  xkcdrect(data = humble, aes(
+  xmin = id - 0.5, xmax = id + 0.5, ymin = 0, 
+  ymax = profit, fill = I("green"))) + 
+  coord_polar() +
+  theme_void() + 
+  theme(legend.position = 'none')
+
+## Geo Map
+ggplot() + xkcdrect(data = humble, aes(
+  xmin = id - 0.5, xmax = id + 0.5, ymin = 0, 
+  ymax = sales, fill = profit)) + coord_map() +
+  theme_void() + 
+  theme(legend.position = 'none')
+
+
+```
+
+Using Bars to make chart
+```{r bar}
+bar <- ggplot(humble, aes(areas, fill = profit)) + geom_rect(aes(x = areas,
+   xmin = id - 0.5, xmax = id + 0.5, ymin = end_sales, 
+   ymax = start_sales, color = profit)) + theme_void() +
+   theme(legend.key = element_blank()) 
+bar
+
+ggsave(bar, file="img/aesbar.png",
+       width = 12, height = 8.5 )
+
+```
+
+Aesthetics for Bar Chart
+```{r bar-bad }
+humble$areas <- c("North", "East", "West", "South", "Central")
+
+barBad <- ggplot(humble, aes(areas, weight = sales, fill = areas)) +
+  geom_bar(width = 0.25) +
+  scale_y_continuous(breaks=seq(0, 26, 2)) +
+  coord_cartesian(ylim= c(4,30)) +
+  theme_black() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        legend.position="none", 
+        axis.text = element_text(size = rel(1.8)),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()
+        )
+barBad
+```
+
+
+```{r bar-good }
+
+barGood <- ggplot(humble, aes(reorder(areas, -sales), weight = sales)) +
+  geom_bar(width = 0.75, fill="Orange")  + 
+  theme_black() +
+  theme(legend.position="none", 
+        axis.text = element_text(size = rel(1.8)),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()
+        )
+barGood
+
+ggsave(barGood, file="img/barGood.png",
+       width = 12, height = 8.5 )
+
+```
+
+
+Aesthetics for Pie Chart
+```{r pie-bad}
+installed <- read.csv("data/installed.csv", header = TRUE)
+str(installed)
+
+library(dplyr)
+library(tidyr)
+df2014 <- installed %>%
+      gather("OS", "Value", 4:11) %>%
+      filter(Year == 2014) %>%
+      mutate(Type_OS = paste0(Type, "_", OS) )
+str(df2014) 
+
+pieBad <- ggplot(df2014) + aes(x ="", fill = Type_OS, weight = Value) +
+          geom_bar(width = 1) + coord_polar(theta ="y") + xlab("") + 
+          theme_black() + theme (
+            legend.position = "right",
+            axis.line = element_blank()
+          )
+pieBad
+
+ggsave(pieBad, file="img/pieBad.png",
+       width = 11, height = 8.5 )
+
+```
+
+```{r pie-good}
+
+df2014new <- df2014 %>%
+            select(Value, Type_OS) %>%
+             filter (!is.na(Value)) %>%
+             arrange( desc(Value))
+View(df2014new)
+
+df2014head <- head(df2014new)
+other = sum(df2014new$Value) - sum(df2014head$Value)
+newrow = c(other , "Others")
+df2014pie = rbind(df2014head, newrow)
+df2014pie$Value = as.integer(df2014pie$Value)
+
+pieGood <- ggplot(df2014pie) + 
+          aes(x ="", fill = reorder(Type_OS, -Value), weight = Value) +
+          geom_bar(width = 1) + coord_polar(theta ="y") + xlab("") + 
+          scale_fill_brewer("Type_OS", palette = "BrBG") +
+          theme_black() + theme (
+            legend.position = "right",
+            axis.line = element_blank() ,
+            legend.title =  element_text(size = rel(1.2), face = "plain", hjust = 1.5, colour = "grey70"),
+            legend.text = element_text(size = rel(1.2), 
+                                       colour = "grey70"),
+            legend.key.size =    unit(1.8, "lines")
+
+          )
+pieGood
+
+ggsave(pieGood, file="img/pieGood.png",
+       width = 12, height = 8.5 )
+
+```
+
+
+
+```{r line-bad}
+dfAll <- installed %>%
+      gather("OS", "Value", 4:11) %>%
+      mutate(Type_OS = paste0(Type, "_", OS) )
+str(dfAll) 
+
+lineBad <- ggplot(dfAll) + aes(Year, Value, color = Type_OS) +
+  geom_line(size = 1, linetype = "dashed") +
+  scale_x_continuous(breaks=seq(2006,2017,1)) +
+  scale_y_continuous(limits = c(0,4000)) +
+  theme_black() + theme (
+            legend.position = "right",
+            axis.text = element_text(size = rel(1.5)),
+            legend.text = element_text(size = rel(1.2), 
+                                       colour = "grey70")
+  )
+lineBad
+
+ggsave(lineBad, file="img/lineBad.png",
+       width = 12, height = 8.5 )
+
+```
+
+
+```{r line-good}
+
+lineGood <- ggplot(dfAll) + aes(Year, Value, color = OS) +
+  geom_line(size = 1) +
+  scale_x_continuous(breaks=seq(2006,2017,2)) +
+  facet_grid(OS~Type, drop = TRUE) +
+  theme_black() + theme (
+            legend.position = "none",
+            axis.text = element_text(size = rel(1)),
+            legend.text = element_text(size = rel(1.2), 
+                                       colour = "grey70"),
+            strip.background =   element_rect(fill = "grey30", 
+                                              colour = "grey50"),
+            strip.text.x = element_text(size = rel(1.5), 
+                                        colour = "grey70"),
+            strip.text.y = element_text(size = rel(1.1), 
+                                        colour = "grey70"),
+            plot.background =   element_rect(fill = "grey20", 
+                                              colour = NA)
+
+  )
+lineGood
+
+ggsave(lineGood, file="img/lineGood.png",
+       width = 12, height = 8.5 )
+
+```

@@ -1,0 +1,171 @@
+---
+title: "Pindecode"
+author: "Amit Kapoor"
+date: "13 July 2015"
+output: html_document
+---
+
+Pindecode Map
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+
+library(grid)
+library(ggplot2)
+library(gridExtra)
+  
+theme_black_map <- function(base_size = 16, base_family = "Helvetica") {
+    theme(
+    line =  element_line(colour = "black", size = 0.5, linetype = 1,
+                            lineend = "butt"),
+    rect =  element_rect(fill = "white", colour = "black", size = 0.5, linetype = 1),
+    text =  element_text(family = base_family, face = "plain",
+                  colour = "black", size = base_size,
+                  hjust = 0.5, vjust = 0.5, angle = 0, lineheight = 0.9),
+    
+    axis.text =          NULL,
+    strip.text =         element_text(size = rel(0.8), colour = "grey70"),
+
+    axis.line =          element_blank(),
+    axis.text.x =        element_text(vjust = 1),
+    axis.text.y =        element_text(hjust = 1),
+    axis.ticks =         element_line(colour = "grey20", size = 0.2),
+    axis.title =         element_text(colour = "grey20"),
+    axis.title.x =       element_blank(),
+    axis.title.y =       element_blank(),
+    axis.ticks.length =  unit(0.3, "lines"),
+    axis.ticks.margin =  unit(0.2, "lines"),
+
+    legend.background =  element_rect(fill = 'black'),
+    legend.margin =      unit(0.2, "cm"),
+    legend.key =         element_rect(fill = "grey20", colour = "grey50"),
+    legend.key.size =    unit(1.2, "lines"),
+    legend.key.height =  NULL,
+    legend.key.width =   NULL,
+    legend.text =        element_text(size = rel(0.8), colour = "grey50"),
+    legend.text.align =  NULL,
+    legend.title =       element_text(size = rel(0.8), face = "plain", hjust = 0, colour = "grey50"),
+    legend.title.align = NULL,
+    legend.position =    "none",
+    legend.direction =   "vertical",
+    legend.justification = "center",
+    legend.box =         NULL,
+
+    panel.background =   element_rect(fill = "black", colour = NA),
+    panel.border =       element_rect(fill = NA, colour = NA),
+    panel.grid.major =   element_line(colour = "grey20", size = 0.2),
+    panel.grid.minor =   element_line(colour = "black", size = 0.5),
+    panel.margin =       unit(0.25, "lines"),
+
+    strip.background =   element_rect(fill = "grey40", colour = "grey10"),
+    strip.text.x =       element_text(),
+    strip.text.y =       element_text(angle = -90),
+
+    plot.background =    element_rect(colour = "black", fill = "black"),
+    plot.title =         element_text(size = rel(1.2)),
+    plot.margin =        unit(c(0.5, 0.5, 0.5, 0.5), "lines"),
+
+    complete = TRUE
+  )
+}
+attr(theme_black_map(), "complete")
+
+```
+
+Load the data
+```{r}
+df <- read.csv("data/pincode.csv")
+
+```
+
+Lets create the pincode map
+```{r}
+pinmapAll <- ggplot(df) + aes(lat,lon) + 
+  geom_point(color = "orange", alpha = 0.3, size = 1.5) +
+  coord_equal() + theme_black_map()
+pinmapAll
+```
+
+Lets create the pincode map for each unique pincode only
+```{r}
+library(dplyr)
+dfUniquePin <- df %>%
+             group_by(pincode, lat, lon) %>%
+             tally() %>%
+             ungroup()
+
+par(bg = "black")
+pinmapUnique <- ggplot(dfUniquePin) + aes(lat,lon) + 
+  geom_point(color = "orange", alpha = 0.3, size = 1.5) +
+  coord_equal() + theme_black_map()
+pinmapUnique
+
+ggsave("img/pinmapUnique.png", pinmapUnique, width = 8.4, height = 9)
+```
+
+Lets create the pincode map for each unique starter state
+```{r}
+# Add Code Market
+dfUniquePin <- dfUniquePin %>% 
+               mutate(start = trunc(pincode / 100000))
+
+dfUniquePin$start <-  as.factor(dfUniquePin$start)
+str(dfUniquePin)
+
+pinmapUniqueStart <- ggplot(dfUniquePin) + aes(lat,lon, color = start) + 
+  geom_point(alpha = 0.3, size = 1.5) +
+  coord_equal() + theme_black_map()
+pinmapUniqueStart
+
+ggsave("img/pinmapUniqueStart.png", pinmapUniqueStart, 
+       width = 8.4, height = 9)
+```
+
+Color them using Saturation
+```{r}
+# Add Code Market
+
+pinmapUniqueStartSat <- ggplot(dfUniquePin) + 
+  aes(lat,lon, color = start) + 
+  scale_color_brewer("start", palette = "Reds") +
+  geom_point(alpha = 0.3, size = 1.5) +
+  coord_equal() + theme_black_map()
+pinmapUniqueStartSat
+
+ggsave("img/pinmapUniqueStartSat.png", pinmapUniqueStartSat, 
+       width = 8.4, height = 9)
+```
+
+
+Create Chloroplethe
+``` {r map-choro}
+library(choroplethr)
+str(df_state_demographics)
+
+library(maps)
+map("state")
+states <- map_data("state")
+choro <- merge(states, df_state_demographics, sort = FALSE, by = "region")
+
+choroBad <- ggplot(choro) + 
+  aes(long, lat, group = group, fill = region) +
+  geom_polygon(linetype = 2, linewidth = 10, color = "black") + 
+  coord_map() + theme_black() + 
+  theme ( legend.position = "none",
+         axis.line = element_blank() 
+         )
+choroBad
+
+choroBad <- ggplot(choro) + 
+  aes(long, lat, group = group, fill = region) +
+  geom_polygon(linewidth = 12, color = "grey") + 
+  coord_map() + theme_black() + 
+  scale_fill_brewer("region", palette = "Set1") +
+  theme ( legend.position = "right",
+         axis.line = element_blank() 
+         )
+choroBad
+
+ggsave(choroBad, "img/choroBad"), 
+       width = 16, height = 9)
+

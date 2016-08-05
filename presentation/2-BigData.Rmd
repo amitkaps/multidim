@@ -1,0 +1,223 @@
+---
+title: "Big Data Viz"
+author: "Amit Kapoor"
+date: "13 July 2015"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+
+library(grid)
+library(ggplot2)
+library(gridExtra)
+
+theme_black <- function(base_size = 16, base_family = "Helvetica") {
+    theme(
+    line =  element_line(colour = "black", size = 0.5, linetype = 1,
+                            lineend = "butt"),
+    rect =  element_rect(fill = "white", colour = "black", size = 0.5, linetype = 1),
+    text =  element_text(family = base_family, face = "plain",
+                  colour = "black", size = base_size,
+                  margin = margin(), debug = FALSE,
+                  hjust = 0.5, vjust = 0.5, angle = 0, lineheight = 0.9),
+    
+    axis.text =          element_text(size = rel(1), colour = "grey70"),
+    strip.text =         element_text(size = rel(0.8), colour = "grey70"),
+
+    axis.line =          element_line(colour = "grey70"),
+    axis.text.x =        element_text(vjust = 1),
+    axis.text.y =        element_text(hjust = 1),
+    axis.ticks =         element_line(colour = "grey70", size = 0.2),
+    axis.title =         element_text(colour = "grey70"),
+    axis.title.x =       element_blank(),
+    axis.title.y =       element_blank(),
+  # axis.title.x =       element_text(vjust = 1),
+  # axis.title.y =       element_text(angle = 90),
+    axis.ticks.length =  unit(0.3, "lines"),
+  # axis.ticks.margin =  unit(0.5, "lines"),
+
+    legend.background =  element_rect(fill = 'black'),
+    legend.margin =      unit(0.2, "cm"),
+    legend.key =         element_rect(fill = "grey20", colour = "grey50"),
+    legend.key.size =    unit(1.2, "lines"),
+    legend.key.height =  NULL,
+    legend.key.width =   NULL,
+    legend.text =        element_text(size = rel(0.8), colour = "grey50"),
+    legend.text.align =  NULL,
+    legend.title =       element_text(size = rel(0.8), face = "plain", hjust = 0, colour = "grey50"),
+    legend.title.align = NULL,
+    legend.position =    "none",
+    legend.direction =   "vertical",
+    legend.justification = "center",
+    legend.box =         NULL,
+
+    panel.background =   element_rect(fill = "black", colour = NA),
+    panel.border =       element_rect(fill = NA, colour = NA),
+    panel.grid.major =   element_line(colour = "grey50", size = 0.2),
+    panel.grid.minor =   element_line(colour = "black", size = 0.5),
+    panel.margin =       unit(0.25, "lines"),
+
+    strip.background =   element_rect(fill = "grey30", colour = "grey10"),
+    strip.text.x =       element_text(),
+    strip.text.y =       element_text(angle = -90),
+
+    plot.background =    element_rect(colour = "black", fill = "black"),
+    plot.title =         element_text(size = rel(1.2)),
+    plot.margin =        unit(c(1, 1, 0.5, 0.5), "lines"),
+
+    complete = TRUE
+  )
+}
+attr(theme_black(), "complete")
+
+```
+
+Create the Biggish Data 
+```{r, echo=FALSE}
+x <- rnorm(1000000, mean=0, sd=2)
+y <- rnorm(1000000, mean=0, sd=2)
+xy <- data.frame(x,y)
+```
+
+Plot Data, Sample, Model, Binning
+
+```{r}
+# All the Data
+graphData <- ggplot(xy) + aes(x,y) +
+  geom_point(color = "orange", alpha = 0.2) +
+  scale_x_continuous(limits=c(-4,4)) +
+  scale_y_continuous(limits=c(-4,4)) +
+  theme_black()
+
+# Sample the Data
+library(dplyr)
+xysample <- sample_n(xy, 5000)
+graphSample <- ggplot(xysample) + aes(x,y) + 
+  geom_point(color = "orange", alpha = 0.2) +
+  scale_x_continuous(limits=c(-4,4)) +
+  scale_y_continuous(limits=c(-4,4)) +
+  theme_black()
+
+# Model the data
+graphModel <- ggplot(xy) + aes(x,y) + 
+  geom_density2d(color = "orange") +
+  scale_x_continuous(limits=c(-4,4)) +
+  scale_y_continuous(limits=c(-4,4)) +
+  theme_black()
+
+# Bin the data
+graphBin <-ggplot(xy) + aes(x,y) +  geom_bin2d(bins = 30)  + 
+  scale_fill_gradient( low="gray10", high ="orange", space = "Lab") +
+  scale_x_continuous(limits=c(-4,4)) +
+  scale_y_continuous(limits=c(-4,4)) +
+  theme_black()
+
+# Arrange
+graphBig <- arrangeGrob(graphData, graphSample, graphBin, graphModel,
+                              ncol=2, nrow =2)
+graphBig
+ggsave("img/bigdataviz.png", graphBig, width = 10, height = 10)
+```
+
+Take another sample from bigvis package
+
+```{r}
+library(bigvis)
+library(ggplot2)
+
+## 
+theme_black_plus <- theme_black() + 
+  theme(axis.text = element_text(size = rel(1.5)),
+        axis.title.x = element_text(size = rel(1.5)),
+        axis.title.y = element_text(size = rel(1.5)),
+        legend.position = "right"
+        )
+```
+
+
+
+Bigvis of small data - diamonds
+``` {r}
+
+dp <- ggplot(diamonds) + aes(carat, price) +
+      geom_point(alpha = 0.2, colour = "orange") +
+      theme_black_plus  
+dp
+
+ggsave(dp, file="img/diamonds.png",
+       width = 16, height = 7 )
+
+
+Nbin <- 20
+BinData <- with(diamonds,
+            condense( bin(carat,find_width(carat, Nbin)),
+                      bin(price,find_width(price, Nbin))))
+
+dpc <- ggplot(data=diamondsBinData) + 
+      aes(carat, price, fill=.count) +
+      geom_tile() + theme_black_plus + 
+      scale_fill_gradient( space="Lab",na.value = "black")
+dpc
+
+ggsave(dpc, file="img/diamondsbin.png",
+       width = 16, height = 7 )
+
+
+dpcp <- dpc + geom_point(data = diamonds, aes(fill = NULL), 
+                    alpha = 0.2, colour = "orange")
+dpcp
+
+ggsave(dpcp, file="img/diamondsbinpoint.png",
+       width = 16, height = 7 )
+
+```
+
+
+
+Multiple Variable
+```{r}
+mp <- ggplot(movies) + aes(length, rating) +
+      geom_point(alpha = 0.2, colour = "orange") +
+      theme_black_plus  
+mp
+
+ggsave(mp, file="img/movies.png",
+       width = 16, height = 7 )
+
+library(dplyr)
+mps <- movies %>%
+       select(title, length, rating) %>%
+       filter(length > 1000) %>%
+       arrange(desc(length))
+mps
+
+Nbin <- 1e4
+binData <- with(movies, condense(bin(length, find_width(length, Nbin)), bin(rating, find_width(rating, Nbin))))
+
+mplot <- ggplot(binData) + aes(length, rating, fill= .count) +
+  geom_tile() + theme_black_plus
+mplot
+
+ggsave(mplot, file="img/moviesbin.png",
+       width = 16, height = 7 )
+
+# Remove outliers
+mplotOut <- mplot %+% peel(binData)
+mplotOut
+ggsave(mplotOut, file="img/moviesbinOut.png",
+       width = 16, height = 7 )
+
+## 
+smoothBinData <- smooth(peel(binData), h=c(20, 1))
+smplotOut <- autoplot(smoothBinData) + theme_black_plus
+
+ggsave(smplotOut, file="img/moviesbinOutSmooth.png",
+       width = 16, height = 7 )
+
+```
+
+
+
+
+

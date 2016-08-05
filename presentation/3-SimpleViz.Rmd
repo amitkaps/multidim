@@ -1,0 +1,431 @@
+---
+title: "Simple Visulization"
+author: "Amit Kapoor"
+date: "13 July 2015"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+
+library(grid)
+library(ggplot2)
+library(gridExtra)
+
+set.seed(300)
+dsmall <- diamonds[sample(nrow(diamonds), 50), ]
+dlarge <- diamonds[sample(nrow(diamonds), 500),]
+  
+theme_black_clean <- function(base_size = 16, base_family = "Helvetica") {
+    theme(
+    line =  element_line(colour = "black", size = 0.5, linetype = 1,
+                            lineend = "butt"),
+    rect =  element_rect(fill = "white", colour = "black", size = 0.5, linetype = 1),
+    text =  element_text(family = base_family, face = "plain",
+                  colour = "black", size = base_size,
+                  hjust = 0.5, vjust = 0.5, angle = 0, lineheight = 0.9),
+    
+    axis.text =          NULL,
+    strip.text =         NULL,
+
+    axis.line =          element_line(colour = "grey70"),
+    axis.text.x =        element_text(vjust = 1),
+    axis.text.y =        element_text(hjust = 1),
+    axis.ticks =         element_line(colour = "grey70", size = 0.2),
+    axis.title =         element_text(colour = "grey70"),
+    axis.title.x =       element_blank(),
+    axis.title.y =       element_blank(),
+    axis.ticks.length =  unit(0.3, "lines"),
+    axis.ticks.margin =  unit(0.2, "lines"),
+
+    legend.background =  element_rect(fill = 'black'),
+    legend.margin =      unit(0.2, "cm"),
+    legend.key =         element_rect(fill = "grey20", colour = "grey50"),
+    legend.key.size =    unit(1.2, "lines"),
+    legend.key.height =  NULL,
+    legend.key.width =   NULL,
+    legend.text =        element_text(size = rel(0.8), colour = "grey50"),
+    legend.text.align =  NULL,
+    legend.title =       element_text(size = rel(0.8), face = "plain", hjust = 0, colour = "grey50"),
+    legend.title.align = NULL,
+    legend.position =    "none",
+    legend.direction =   "vertical",
+    legend.justification = "center",
+    legend.box =         NULL,
+
+    panel.background =   element_rect(fill = "black", colour = NA),
+    panel.border =       element_rect(fill = NA, colour = NA),
+    panel.grid.major =   element_line(colour = "grey50", size = 0.2),
+    panel.grid.minor =   element_line(colour = "black", size = 0.5),
+    panel.margin =       unit(0.25, "lines"),
+
+    strip.background =   element_rect(fill = "grey30", colour = "grey10"),
+    strip.text.x =       element_text(),
+    strip.text.y =       element_text(angle = -90),
+
+    plot.background =    element_rect(colour = "black", fill = "black"),
+    plot.title =         element_text(size = rel(1.2)),
+    plot.margin =        unit(c(0.5, 0.5, 0.5, 0.5), "lines"),
+
+    complete = TRUE
+  )
+}
+attr(theme_black_clean(), "complete")
+
+```
+
+Distribution - Single - Point
+
+```{r dist-single-point , echo=FALSE}
+dsp <- ggplot(dsmall, aes("price", price)) + 
+  geom_point(size = 10, color = I('orange'), alpha = 0.5) + 
+  coord_flip() +
+  theme_black_clean()
+dsp
+ggsave("img/dsp.png", dsp, width = 4, height = 2.25, unit = "in")
+```
+
+
+Distribution - Single - Point - Jitter
+
+```{r dist-single-point-jitter , echo=FALSE}
+dspj <- ggplot(dsmall, aes("price", price)) + 
+  geom_point(size = 2, color = I('orange'), alpha = 0.8,
+              position = position_jitter(w = 0.2)) +
+  coord_flip() +
+  theme_black_clean()
+dspj
+ggsave("img/dspj.png", dspj, width = 4, height = 2.25, unit = "in")
+
+```
+
+
+Distribution - Single - Histogram
+
+```{r dist-single-histogram , echo=FALSE}
+dsh <- ggplot(diamonds, aes(price)) + 
+  geom_histogram(binwidth = 500, fill = "orange") +
+  theme_black_clean() 
+dsh
+ggsave("img/dsh.png", dsh, width = 4, height = 2.25, unit = "in")
+
+```
+
+
+Distribution - Single - Freq Polygon
+
+```{r dist-single-freqpoly , echo=FALSE}
+dsf <- ggplot(diamonds, aes(price)) + 
+  geom_freqpoly(color = I('orange'), binwidth = 50) +
+  theme_black_clean()
+dsf
+ggsave("img/dsf.png", dsf, width = 4, height = 2.25, unit = "in")
+
+```
+
+
+Distribution - Single - Density Plot
+
+```{r dist-single-freqpoly , echo=FALSE}
+dsd <- ggplot(diamonds, aes(price)) + 
+  geom_density(color = I('orange'), fill = I('orange'), alpha = 0.4) +
+  theme_black_clean()
+dsd
+ggsave("img/dsd.png", dsd, width = 4, height = 2.25, unit = "in")
+
+
+```
+
+
+1D - Quantitative Chart
+
+```{r}
+# Arrange
+graph1dq <- arrangeGrob(dspj, dsh, dsf, dsd, ncol=4, nrow =1)
+
+ggsave("img/graph1dq.png", graph1dq, width = 8, height = 1.5)
+```
+
+
+Distribution - Multiple - Point
+
+```{r dist-multiple-point , echo=FALSE}
+dmp <- ggplot(dsmall, aes(price, cut, color=cut)) + 
+  geom_point(size = 1) + scale_shape(solid = FALSE) +
+  theme_black_clean()
+dmp
+ggsave("img/dmp.png", dmp, width = 4, height = 2.25, unit = "in")
+
+```
+
+
+Distribution - Multiple - Point - Jitter
+
+```{r dist-multiple-point-jitter , echo=FALSE}
+dmpj <- ggplot(dlarge, aes(price, cut, color=cut)) + 
+  geom_point(size = 2, position = position_jitter(w = 0.05)) + 
+  scale_shape(solid = FALSE) +
+  theme_black_clean()
+dmpj
+ggsave("img/dmpj.png", dmpj, width = 4, height = 2.25, unit = "in")
+
+```
+
+Distribution - Multiple - Freq Polygon
+
+```{r dist-multiple-freqpoly , echo=FALSE}
+dmf <- ggplot(diamonds, aes(price, color = cut)) + 
+  geom_freqpoly(binwidth = 100) +
+  theme_black_clean()
+dmf
+ggsave("img/dmf.png", dmf, width = 4, height = 2.25, unit = "in")
+```
+
+Distribution - Multiple - BoxPlot
+
+```{r dist-multiple-boxplot , echo=FALSE}
+dmb <- ggplot(diamonds, aes(cut, price, fill = cut)) + 
+  geom_boxplot(outlier.colour = "grey80", color = "orange",
+               outlier.size = 1) + 
+  ylim(c(0,10000)) +
+  theme_black_clean()
+dmb
+ggsave("img/dmb.png", dmb, width = 4, height = 2.25, unit = "in")
+
+```
+
+
+Distribution - Multiple - Histogram
+
+```{r dist-multiple-histogram , echo=FALSE}
+dmh <- ggplot(diamonds, aes(price, fill = cut)) + 
+  geom_histogram(binwidth = 500) +
+  theme_black_clean()
+dmh
+```
+
+
+Distribution - Muliple - Density Plot
+
+```{r dist-multiple-freqpoly , echo=FALSE}
+dmd <- ggplot(diamonds, aes(price, fill = cut)) + 
+  geom_density(alpha = 0.3) +
+  theme_black_clean()
+dmd
+ggsave("img/dmd.png", dmd, width = 4, height = 2.25, unit = "in")
+```
+
+
+
+2D - Quantitative Chart
+
+```{r}
+# Arrange
+graph2dq <- arrangeGrob(dmpj, dmb, dmf, dmd, ncol=4, nrow =1)
+
+ggsave("img/graph2dq.png", graph2dq, width = 8, height = 1.5)
+
+
+graph12dq <- arrangeGrob(dspj, dsh, dsf, dsd, 
+                         dmp, dmb, dmf, dmd,
+                         ncol=4, nrow =2)
+
+ggsave("img/graph12dq.png", graph12dq, width = 8, height = 3)
+
+```
+
+
+
+Distribution - Multiple - Freq Polygon - Small Multiples
+
+```{r dist-multiple-freqpoly-small , echo=FALSE}
+dmfs <- ggplot(diamonds, aes(price, color = cut)) + 
+  geom_freqpoly(binwidth = 100) +
+  facet_wrap( ~ cut) +
+  theme_black_clean()
+dmfs
+```
+
+Distribution - Multiple - Histogram - Small Multiples
+
+```{r dist-multiple-histogram-small , echo=FALSE}
+dmhs <- ggplot(diamonds, aes(price)) + 
+  geom_histogram(color =I("orange"), binwidth = 500) +
+  facet_wrap( ~ cut) +
+  theme_black_clean()
+dmhs
+```
+
+Distribution - Multiple - Histogram - Small Multiples - Cut
+
+```{r dist-multiple-histogram-small-color , echo=FALSE}
+dmhs2 <- ggplot(diamonds, aes(price, fill = clarity)) + 
+  geom_histogram(binwidth = 500) + facet_wrap( ~ cut) +
+  theme_black_clean()
+dmhs2
+```
+
+
+
+
+Comparison - Single - DotPlot
+
+```{r comp-single-dot , echo=FALSE}
+sdiamonds <- transform(diamonds, cut=reorder(cut, 
+                                       1+numeric(dim(diamonds)[1]),
+                                       FUN=sum))
+csd <- ggplot(sdiamonds) + 
+  geom_point(aes(x=cut), stat="bin", color=I("orange"), size = 4) + 
+  coord_flip() +
+  theme_black_clean()
+csd
+
+ggsave("img/csd.png", csd, width = 4, height = 2.25, unit = "in")
+
+```
+
+Comparison - Single - Bar (csb)
+```{r comparison-single-bar, echo=FALSE}
+csb <- ggplot(diamonds, aes(clarity)) +
+  geom_bar(fill = I("orange"))  +
+  theme_black_clean()
+csb
+
+ggsave("img/csb.png", csb, width = 4, height = 2.25, unit = "in")
+
+```
+
+
+
+1D - Categorical Chart
+
+```{r}
+# Arrange
+graph1dc <- arrangeGrob(csd, csb, ncol=2, nrow =1)
+
+ggsave("img/graph1dc.png", graph1dc, width = 4, height = 1.5)
+
+```
+
+
+Comparison - Single - CoxComb (cmc)
+```{r comparison-single-coxcomb, echo=FALSE}
+cmc <- ggplot(diamonds, aes(cut, fill = cut)) +
+  geom_bar(width = 1)  +
+  theme_black_clean() + coord_polar()
+cmc 
+```
+
+Part-to-Whole - Single - Pie (pmp)
+```{r comp-single-pie, echo=FALSE}
+psp <- ggplot(diamonds, aes(x = "", fill = cut)) +
+  geom_bar(width = 1)   +
+  theme_black_clean() + coord_polar(theta="y")
+psp
+```
+
+
+Part-to-Whole - Multiple - Bar Stacked (pms)
+```{r part-multiple-stacked, echo=FALSE}
+pms <- ggplot(diamonds, aes(x = cut, fill = clarity)) +
+  geom_bar(position ="fill")   +
+  theme_black_clean()
+pms
+```
+
+Part-to-Whole - Multiple - Donuts (pmd)
+```{r part-multiple-donut, echo=FALSE}
+pmd <- ggplot(diamonds, aes(x = cut, fill = clarity)) +
+  geom_bar(width = 0.7, position = "fill")   +
+  theme_black_clean() + coord_polar(theta="y")
+pmd
+```
+
+Part-to-Whole - Multiple - Mosaic (pmm)
+```{r part-multiple-mosiac, echo=FALSE}
+ggMMplot <- function(var1, var2){
+  require(ggplot2)
+  levVar1 <- length(levels(var1))
+  levVar2 <- length(levels(var2))
+
+  jointTable <- prop.table(table(var1, var2))
+  plotData <- as.data.frame(jointTable)
+  plotData$marginVar1 <- prop.table(table(var1))
+  plotData$var2Height <- plotData$Freq / plotData$marginVar1
+  plotData$var1Center <- c(0, cumsum(plotData$marginVar1)[1:levVar1 -1]) +
+    plotData$marginVar1 / 2
+
+  ggplot(plotData, aes(var1Center, var2Height)) +
+    geom_bar(stat = "identity", aes(width = marginVar1, fill = var2), col = "grey80") +
+    geom_text(aes(label = as.character(var1), x = var1Center, y = 1.05))}
+
+pmm <- ggMMplot(diamonds$cut, diamonds$clarity) + theme_black_clean()
+
+pmm
+
+ggsave("img/pmm.png", pmm, width = 4, height = 2.25, unit = "in")
+
+
+```
+
+Comparison - Multiple - Bar (cmb)
+```{r comparison-multiple-bar, echo=FALSE}
+cmb <- ggplot(diamonds, aes(cut, fill = clarity)) +
+  geom_bar(position = "dodge")  +
+  theme_black_clean()
+cmb
+ggsave("img/cmb.png", cmb, width = 4, height = 2.25, unit = "in")
+
+```
+
+
+Correlation - Single - Scatter (cms)
+```{r corr-single-scatter, echo=FALSE}
+css <- ggplot(dlarge, aes(carat,price)) +
+  geom_point(color = I("orange"), alpha = I(0.8) , size = 1) +
+  theme_black_clean()
+css
+
+ggsave("img/css.png", css, width = 4, height = 2.25, unit = "in")
+```
+
+
+Correlation - Multiple - Scatter - Cat (cms)
+```{r corr-multiple-scatter-cat, echo=FALSE}
+cmsc <- ggplot(dlarge, aes(carat,price, color=cut)) +
+  geom_point( alpha = I(0.8) , size = 2) +
+  theme_black_clean()
+cmsc
+```
+
+Correlation - Multiple - Scatter (cms)
+```{r corr-multiple-scatter, echo=FALSE}
+cms <- ggplot(dlarge, aes(carat,price)) +
+  geom_point(color = I("orange"), alpha = I(0.8) , size = 3) +
+  theme_black_clean() + facet_wrap(~cut)
+cms
+```
+
+Slopegraph - Two variable
+```{r slopegraph, echo=FALSE}
+library(GGally)
+dslope <- subset(dsmall, select = c("carat", "price", "cut"))
+slg <- ggparcoord(data = dslope, columns = 1:2, groupColumn = 3, 
+           order = "anyClass") + theme_black_clean()
+
+ggsave("img/slg.png", slg, width = 4, height = 2.25, unit = "in")
+
+```
+
+
+Slopegraph - Two variable
+```{r slopegraph, echo=FALSE}
+library(tabplot)
+tabs <- tableplot(dsmall, sortCol = price, select = c(price, carat), 
+                 numPals = "Oranges", title = NULL, bg="black")
+tableSave(tabs, filename = "img/tablelens.png", width = 16, height = 9,
+           fontsize = 1, legend.lines = 1, 
+          col = "transparent",
+          bg = "black") + opts(panel.background = "transparent")
+
+```
