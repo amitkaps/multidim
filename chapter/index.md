@@ -15,7 +15,7 @@
 - Dimensionality Reduction
 - Layers and Interaction
 
-## 4. [One dimension: p = 1](/#04)
+## 4. [One dimension: p = 1](#04)
 * Categorical: Bar, Column, Stacked, Polar
 * Continuous: Histogram, Frequency Polygon
 * Tips & Tricks: Coordinate changes, Scale transforms, Binwidth
