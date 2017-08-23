@@ -1,4 +1,7 @@
-.Rproj.user
+.Rproj
 .Rhistory
 .RData
 _site
+.ipynb_checkpoints
+/.ipynb_checkpoints
+.Rproj.user
