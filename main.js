@@ -115,7 +115,7 @@ window.onload = function () {
       console.log(vl.compile(jsonVis).spec == undefined)
       htmlString = "<div id='vis-" + i + "'></div>"
       specs[i].parentNode.insertAdjacentHTML('afterend', htmlString);
-      specs[i].style.display = 'none';
+      specs[i].parentNode.display = 'none';
       vega.embed(el, jsonVis, opts);
     };
   };
